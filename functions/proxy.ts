@@ -32,7 +32,15 @@ function handleOptions(): Response {
 
 function isAllowedAudioHost(hostname: string): boolean {
   if (!hostname) return false;
-  return KUWO_HOST_PATTERN.test(hostname) || hostname.includes("music.126.net") || hostname.includes("qq.com");
+  // 允许主流音乐平台的域名
+  return (
+    KUWO_HOST_PATTERN.test(hostname) || 
+    hostname.includes("music.126.net") || 
+    hostname.includes("qq.com") || 
+    hostname.includes("myqcloud.com") || 
+    hostname.includes("kugou.com") ||
+    hostname.includes("migu.cn")
+  );
 }
 
 function normalizeAudioUrl(rawUrl: string): URL | null {
@@ -77,10 +85,32 @@ async function proxyAudio(targetUrl: string, request: Request): Promise<Response
   }
 
   const upstream = await fetch(normalized.toString(), init);
-  const headers = createCorsHeaders(upstream.headers);
-  if (!headers.has("Cache-Control")) {
-    headers.set("Cache-Control", "public, max-age=3600");
+  
+  // 复制原始响应头，但需要处理 CORS 和 Range
+  const headers = new Headers();
+  
+  // 允许的原始头
+  const allowedHeaders = [
+    "content-type", 
+    "content-length", 
+    "content-range", 
+    "accept-ranges", 
+    "cache-control", 
+    "expires", 
+    "last-modified", 
+    "etag"
+  ];
+
+  for (const [key, value] of upstream.headers.entries()) {
+    if (allowedHeaders.includes(key.toLowerCase())) {
+      headers.set(key, value);
+    }
   }
+
+  // 强制 CORS
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  headers.set("Access-Control-Expose-Headers", "Content-Range, Content-Length, Accept-Ranges");
 
   return new Response(upstream.body, {
     status: upstream.status,

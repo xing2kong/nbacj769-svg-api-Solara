@@ -395,20 +395,19 @@ function buildAudioProxyUrl(url) {
 
     try {
         const parsedUrl = new URL(url, window.location.href);
-        if (parsedUrl.protocol === "https:") {
-            return parsedUrl.toString();
+        
+        // 如果已经是代理地址，直接返回
+        if (parsedUrl.searchParams.has('target')) {
+            return url;
         }
 
-        const isHttp = parsedUrl.protocol === "http:";
-        const isKuwo = /(^|\.)kuwo\.cn$/i.test(parsedUrl.hostname);
-        const isNetease = parsedUrl.hostname.includes("music.126.net");
-        const isQQ = parsedUrl.hostname.includes("qq.com");
-
-        if (isHttp || isKuwo || isNetease || isQQ) {
-            return `${API.baseUrl}?target=${encodeURIComponent(parsedUrl.toString())}`;
+        // 强制所有外部音频链接通过代理，以解决跨域和防盗链问题
+        // 排除本地资源
+        if (parsedUrl.origin === window.location.origin) {
+            return url;
         }
 
-        return parsedUrl.toString();
+        return `${window.location.origin}/proxy?target=${encodeURIComponent(url)}`;
     } catch (error) {
         console.warn("无法解析音频地址，跳过代理", error);
         return url;
