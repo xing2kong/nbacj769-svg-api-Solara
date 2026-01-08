@@ -541,9 +541,9 @@ const API = {
                 name: song.name || song.title,
                 artist: song.artist || song.author,
                 album: song.album || "",
-                pic_id: song.pic_id || song.pic,
-                url_id: song.url_id || song.url,
-                lyric_id: song.lyric_id || song.lrc,
+                pic_id: song.id || song.songid, // Meting API 通常直接用 ID 获取图片
+                url_id: song.id || song.songid, // Meting API 通常直接用 ID 获取 URL
+                lyric_id: song.id || song.songid, // Meting API 通常直接用 ID 获取歌词
                 source: song.source || source,
             }));
         } catch (error) {
@@ -3665,11 +3665,12 @@ async function playSong(song, options = {}) {
         const audioResponse = await API.fetchJson(audioUrl);
         const audioData = audioResponse.data || audioResponse;
 
-        if (!audioData || !audioData.url) {
+        // Meting API 的 url 类型可能直接返回包含 url 字段的对象，或者直接是 URL 字符串
+        const originalAudioUrl = typeof audioData === 'string' ? audioData : audioData.url;
+
+        if (!originalAudioUrl) {
             throw new Error('无法获取音频播放地址');
         }
-
-        const originalAudioUrl = audioData.url;
         const proxiedAudioUrl = buildAudioProxyUrl(originalAudioUrl);
         const preferredAudioUrl = preferHttpsUrl(originalAudioUrl);
         const candidateAudioUrls = Array.from(
@@ -4149,18 +4150,19 @@ async function downloadSong(song, quality = "320") {
         const audioUrl = API.getSongUrl(song, quality);
         const audioResponse = await API.fetchJson(audioUrl);
         const audioData = audioResponse.data || audioResponse;
+        const downloadUrlFromData = typeof audioData === 'string' ? audioData : audioData.url;
 
-        if (audioData && audioData.url) {
-            const proxiedAudioUrl = buildAudioProxyUrl(audioData.url);
-            const preferredAudioUrl = preferHttpsUrl(audioData.url);
+        if (downloadUrlFromData) {
+            const proxiedAudioUrl = buildAudioProxyUrl(downloadUrlFromData);
+            const preferredAudioUrl = preferHttpsUrl(downloadUrlFromData);
 
-            if (proxiedAudioUrl !== audioData.url) {
+            if (proxiedAudioUrl !== downloadUrlFromData) {
                 debugLog(`下载链接已通过代理转换为 HTTPS: ${proxiedAudioUrl}`);
-            } else if (preferredAudioUrl !== audioData.url) {
+            } else if (preferredAudioUrl !== downloadUrlFromData) {
                 debugLog(`下载链接由 HTTP 升级为 HTTPS: ${preferredAudioUrl}`);
             }
 
-            const downloadUrl = proxiedAudioUrl || preferredAudioUrl || audioData.url;
+            const downloadUrl = proxiedAudioUrl || preferredAudioUrl || downloadUrlFromData;
 
             const link = document.createElement("a");
             link.href = downloadUrl;

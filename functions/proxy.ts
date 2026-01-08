@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://api.liuzhijin.cn/music/";
+const API_BASE_URL = "https://api.i-meto.com/meting/api";
 const KUWO_HOST_PATTERN = /(^|\.)kuwo\.cn$/i;
 const SAFE_RESPONSE_HEADERS = ["content-type", "cache-control", "accept-ranges", "content-length", "content-range", "etag", "last-modified", "expires"];
 
@@ -92,40 +92,35 @@ async function proxyAudio(targetUrl: string, request: Request): Promise<Response
 async function proxyApiRequest(url: URL, request: Request): Promise<Response> {
   const apiUrl = new URL(API_BASE_URL);
   
-  // 适配 liuzhijin API
+  // 适配 Meting API
   const types = url.searchParams.get("types");
   const name = url.searchParams.get("name");
+  const id = url.searchParams.get("id");
   const source = url.searchParams.get("source") || "netease";
   
   if (types === "search") {
-    apiUrl.searchParams.set("input", name || "");
-    apiUrl.searchParams.set("filter", "name");
-    apiUrl.searchParams.set("type", source);
-    apiUrl.searchParams.set("page", url.searchParams.get("pages") || "1");
+    apiUrl.searchParams.set("server", source);
+    apiUrl.searchParams.set("type", "search");
+    apiUrl.searchParams.set("id", name || "");
   } else if (types === "url") {
-    apiUrl.searchParams.set("input", url.searchParams.get("id") || "");
-    apiUrl.searchParams.set("filter", "id");
-    apiUrl.searchParams.set("type", source);
+    apiUrl.searchParams.set("server", source);
+    apiUrl.searchParams.set("type", "url");
+    apiUrl.searchParams.set("id", id || "");
   } else if (types === "lyric") {
-    apiUrl.searchParams.set("input", url.searchParams.get("id") || "");
-    apiUrl.searchParams.set("filter", "id");
-    apiUrl.searchParams.set("type", source);
+    apiUrl.searchParams.set("server", source);
+    apiUrl.searchParams.set("type", "lrc");
+    apiUrl.searchParams.set("id", id || "");
+  } else if (types === "pic") {
+    apiUrl.searchParams.set("server", source);
+    apiUrl.searchParams.set("type", "pic");
+    apiUrl.searchParams.set("id", id || "");
   }
 
-  const body = new URLSearchParams();
-  apiUrl.searchParams.forEach((value, key) => {
-    body.append(key, value);
-  });
-
-  const upstream = await fetch("https://api.liuzhijin.cn/music/", {
-    method: "POST",
+  const upstream = await fetch(apiUrl.toString(), {
     headers: {
       "User-Agent": request.headers.get("User-Agent") ?? "Mozilla/5.0",
       "Accept": "application/json",
-      "Content-Type": "application/x-www-form-urlencoded",
-      "X-Requested-With": "XMLHttpRequest",
     },
-    body: body.toString(),
   });
 
   const headers = createCorsHeaders(upstream.headers);
