@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://api.uomg.com/api/rand.music";
+const API_BASE_URL = "https://api.liuzhijin.cn/music/";
 const KUWO_HOST_PATTERN = /(^|\.)kuwo\.cn$/i;
 const SAFE_RESPONSE_HEADERS = ["content-type", "cache-control", "accept-ranges", "content-length", "content-range", "etag", "last-modified", "expires"];
 
@@ -91,22 +91,36 @@ async function proxyAudio(targetUrl: string, request: Request): Promise<Response
 
 async function proxyApiRequest(url: URL, request: Request): Promise<Response> {
   const apiUrl = new URL(API_BASE_URL);
-  url.searchParams.forEach((value, key) => {
-    if (key === "target" || key === "callback") {
-      return;
-    }
-    apiUrl.searchParams.set(key, value);
-  });
-
-  if (!apiUrl.searchParams.has("types")) {
-    return new Response("Missing types", { status: 400 });
+  
+  // 适配 liuzhijin API
+  const types = url.searchParams.get("types");
+  const name = url.searchParams.get("name");
+  const source = url.searchParams.get("source") || "netease";
+  
+  if (types === "search") {
+    apiUrl.searchParams.set("input", name || "");
+    apiUrl.searchParams.set("filter", "name");
+    apiUrl.searchParams.set("type", source);
+    apiUrl.searchParams.set("page", url.searchParams.get("pages") || "1");
+  } else if (types === "url") {
+    apiUrl.searchParams.set("input", url.searchParams.get("id") || "");
+    apiUrl.searchParams.set("filter", "id");
+    apiUrl.searchParams.set("type", source);
+  } else if (types === "lyric") {
+    apiUrl.searchParams.set("input", url.searchParams.get("id") || "");
+    apiUrl.searchParams.set("filter", "id");
+    apiUrl.searchParams.set("type", source);
   }
 
   const upstream = await fetch(apiUrl.toString(), {
+    method: "POST",
     headers: {
       "User-Agent": request.headers.get("User-Agent") ?? "Mozilla/5.0",
       "Accept": "application/json",
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-Requested-With": "XMLHttpRequest",
     },
+    body: apiUrl.searchParams.toString(),
   });
 
   const headers = createCorsHeaders(upstream.headers);

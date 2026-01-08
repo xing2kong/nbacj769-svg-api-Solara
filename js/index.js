@@ -533,17 +533,18 @@ const API = {
             const data = await API.fetchJson(url);
             debugLog(`API响应: ${JSON.stringify(data).substring(0, 200)}...`);
 
-            if (!Array.isArray(data)) throw new Error("搜索结果格式错误");
+            const songs = data.data || data;
+            if (!Array.isArray(songs)) throw new Error("搜索结果格式错误");
 
-            return data.map(song => ({
-                id: song.id,
-                name: song.name,
-                artist: song.artist,
-                album: song.album,
-                pic_id: song.pic_id,
-                url_id: song.url_id,
-                lyric_id: song.lyric_id,
-                source: song.source,
+            return songs.map(song => ({
+                id: song.id || song.songid,
+                name: song.name || song.title,
+                artist: song.artist || song.author,
+                album: song.album || "",
+                pic_id: song.pic_id || song.pic,
+                url_id: song.url_id || song.url,
+                lyric_id: song.lyric_id || song.lrc,
+                source: song.source || source,
             }));
         } catch (error) {
             debugLog(`API错误: ${error.message}`);
@@ -3661,7 +3662,8 @@ async function playSong(song, options = {}) {
         const audioUrl = API.getSongUrl(song, quality);
         debugLog(`获取音频URL: ${audioUrl}`);
 
-        const audioData = await API.fetchJson(audioUrl);
+        const audioResponse = await API.fetchJson(audioUrl);
+        const audioData = audioResponse.data || audioResponse;
 
         if (!audioData || !audioData.url) {
             throw new Error('无法获取音频播放地址');
@@ -4145,7 +4147,8 @@ async function downloadSong(song, quality = "320") {
         showNotification("正在准备下载...");
 
         const audioUrl = API.getSongUrl(song, quality);
-        const audioData = await API.fetchJson(audioUrl);
+        const audioResponse = await API.fetchJson(audioUrl);
+        const audioData = audioResponse.data || audioResponse;
 
         if (audioData && audioData.url) {
             const proxiedAudioUrl = buildAudioProxyUrl(audioData.url);
