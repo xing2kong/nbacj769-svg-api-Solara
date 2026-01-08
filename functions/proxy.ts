@@ -112,7 +112,12 @@ async function proxyApiRequest(url: URL, request: Request): Promise<Response> {
     apiUrl.searchParams.set("type", source);
   }
 
-  const upstream = await fetch(apiUrl.toString(), {
+  const body = new URLSearchParams();
+  apiUrl.searchParams.forEach((value, key) => {
+    body.append(key, value);
+  });
+
+  const upstream = await fetch("https://api.liuzhijin.cn/music/", {
     method: "POST",
     headers: {
       "User-Agent": request.headers.get("User-Agent") ?? "Mozilla/5.0",
@@ -120,7 +125,7 @@ async function proxyApiRequest(url: URL, request: Request): Promise<Response> {
       "Content-Type": "application/x-www-form-urlencoded",
       "X-Requested-With": "XMLHttpRequest",
     },
-    body: apiUrl.searchParams.toString(),
+    body: body.toString(),
   });
 
   const headers = createCorsHeaders(upstream.headers);
