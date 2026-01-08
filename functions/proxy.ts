@@ -170,7 +170,11 @@ async function proxyApiRequest(url: URL, request: Request): Promise<Response> {
     apiUrl.searchParams.set("type", metingType);
     apiUrl.searchParams.set("id", metingId);
     
-    if (["url", "lrc", "pic"].includes(metingType)) {
+    // 如果前端已经传了 auth，直接使用
+    const providedAuth = url.searchParams.get("auth");
+    if (providedAuth) {
+      apiUrl.searchParams.set("auth", providedAuth);
+    } else if (["url", "lrc", "pic"].includes(metingType)) {
       const auth = await generateAuth(source, metingType, metingId);
       apiUrl.searchParams.set("auth", auth);
     }

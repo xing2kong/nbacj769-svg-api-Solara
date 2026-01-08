@@ -609,18 +609,24 @@ const API = {
     },
 
     getSongUrl: (song, quality = "320") => {
-        const signature = API.generateSignature();
-        return `${API.baseUrl}?types=url&id=${song.id}&source=${song.source || "netease"}&br=${quality}&s=${signature}`;
+        const source = song.source || "netease";
+        let url = `${API.baseUrl}?types=url&id=${song.id}&source=${source}`;
+        if (song.url_auth) url += `&auth=${song.url_auth}`;
+        return url;
     },
 
     getLyric: (song) => {
-        const signature = API.generateSignature();
-        return `${API.baseUrl}?types=lyric&id=${song.lyric_id || song.id}&source=${song.source || "netease"}&s=${signature}`;
+        const source = song.source || "netease";
+        let url = `${API.baseUrl}?types=lyric&id=${song.id}&source=${source}`;
+        if (song.lrc_auth) url += `&auth=${song.lrc_auth}`;
+        return url;
     },
 
     getPicUrl: (song) => {
-        const signature = API.generateSignature();
-        return `${API.baseUrl}?types=pic&id=${song.pic_id}&source=${song.source || "netease"}&size=300&s=${signature}`;
+        const source = song.source || "netease";
+        let url = `${API.baseUrl}?types=pic&id=${song.id}&source=${source}`;
+        if (song.pic_auth) url += `&auth=${song.pic_auth}`;
+        return url;
     }
 };
 
