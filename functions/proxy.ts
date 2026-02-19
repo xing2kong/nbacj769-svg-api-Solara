@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://api.nki.pw/API/music_open_api.php";
+const API_BASE_URL = "http://api.dovis.work/api/163search.php";
 const KUWO_HOST_PATTERN = /(^|\.)kuwo\.cn$/i;
 const SAFE_RESPONSE_HEADERS = ["content-type", "cache-control", "accept-ranges", "content-length", "content-range", "etag", "last-modified", "expires"];
 
